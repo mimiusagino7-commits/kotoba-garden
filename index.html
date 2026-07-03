@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ことばの庭 — 性質タイプ診断</title>
+  
+  <!-- PWA用の各種設定 -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#5F7D6B">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ことばの庭">
+  <link rel="apple-touch-icon" href="icon.svg">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kiwi+Maru:wght@300;400;500&family=Noto+Serif+JP:wght@300;400;600&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Noto Serif JP', 'serif'],
+            kiwi: ['Kiwi Maru', 'sans-serif'],
+          },
+          colors: {
+            'garden-white': '#FDFBF7',     // 澄んだ白・生成り
+            'garden-beige': '#F5EFEB',     // 淡いベージュ
+            'garden-tea': '#8C6239',       // 紅茶色
+            'garden-tea-light': '#A37C58', // 明るめの紅茶色
+            'garden-green': '#5F7D6B',     // くすみグリーン
+            'garden-green-light': '#EAF0EC', // 木漏れ日の薄緑
+            'garden-dark': '#2E2B2A',      // 優しい黒
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Kiwi Maru', 'Noto Serif JP', serif;
+      background-color: #FDFBF7;
+      color: #2E2B2A;
+      -webkit-tap-highlight-color: transparent;
+      /* iOSのスタンドアロン表示のときにバウンスを防ぐための余白確保 */
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .fade-in {
+      animation: fadeIn 0.6s ease-out forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .choice-card:hover {
+      border-color: #5F7D6B;
+    }
+    .choice-active {
+      background-color: #EAF0EC !important;
+      border-color: #5F7D6B !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-garden-green-light selection:text-garden-green">
+
+  <!-- ヘッダー -->
+  <header class="border-b border-garden-beige px-6 py-5 text-center bg-garden-white/90 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-md mx-auto">
+      <h1 class="text-lg font-bold tracking-widest text-garden-tea font-serif flex items-center justify-center gap-1">
+        <span>🍃</span> ことばの庭 — 性質診断
+      </h1>
+      <p class="text-[10px] text-garden-green tracking-wider mt-0.5">心と性質をそっと見つめる、自分観察の場所</p>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="flex-grow max-w-md w-full mx-auto px-5 py-6 space-y-8">
+    
+    <div id="intro-card" class="bg-garden-beige/50 rounded-2xl p-6 text-xs leading-relaxed space-y-3 border border-garden-beige/80">
+      <p class="font-serif text-sm font-semibold text-garden-tea flex items-center gap-1">
+        <span>📖</span> はじめる前に
+      </p>
+      <p class="text-garden-dark/90 font-serif leading-loose">
+        日常のなかの小さな選択から、あなたの「思考グセ」「感情の扱い方」「行動の傾向」をそっと紐解きます。<br>
+        <span class="text-garden-green font-bold">※この診断は医療・心理診断ではなく、自分自身を深く知り、やさしく観察するための自己理解ツールです。</span>肩の力を抜いて、今のあなたに近いものを直感で選んでみてね。
+      </p>
+    </div>
+
+    <div id="quiz-container" class="space-y-6">
+      <div class="w-full bg-garden-beige rounded-full h-1">
+        <div id="progress-bar" class="bg-garden-green h-1 rounded-full transition-all duration-300" style="width: 10%"></div>
+      </div>
+      <div class="flex justify-between items-center text-[11px] text-stone-400 font-serif">
+        <span id="question-number">第 1 問 / 全 10 問</span>
+        <span class="tracking-wider">ことばに耳を澄ます</span>
+      </div>
+
+      <div class="bg-white border border-garden-beige rounded-2xl p-6 space-y-4 shadow-sm fade-in min-h-[100px] flex flex-col justify-center">
+        <h2 id="question-text" class="font-serif text-base font-semibold text-garden-tea leading-relaxed">
+          質問がここに読み込まれます
+        </h2>
+      </div>
+
+      <div id="choices-group" class="space-y-3 fade-in">
+        <!-- JSで選択肢が生成されます -->
+      </div>
+    </div>
+
+    <div id="result-container" class="hidden space-y-6 fade-in">
+      <div class="border-t border-dashed border-garden-beige pt-4">
+        <div class="bg-garden-green-light/40 border border-garden-green/10 rounded-2xl p-6 space-y-6 shadow-inner text-sm">
+          
+          <!-- タイプ別キャラクター画像（スマホにフィットするやさしい角丸） -->
+          <div class="flex justify-center px-4 pt-2">
+            <img id="result-type-image" src="" alt="心の性質キャラクター" class="w-full max-w-[280px] h-auto rounded-2xl shadow-sm border border-garden-beige/50 object-cover" />
+          </div>
+
+          <div class="text-center space-y-1">
+            <span class="text-[10px] font-bold text-garden-green tracking-widest uppercase block">◆ あなたの心に咲く性質 ◆</span>
+            <h2 id="result-type-name" class="font-serif text-xl font-bold text-garden-tea py-1 border-b border-garden-tea/10 inline-block">
+              タイプ名
+            </h2>
+          </div>
+
+          <div class="space-y-1.5">
+            <h3 class="font-serif font-bold text-garden-green flex items-center gap-1">
+              <span>🌱</span> <span>あなたの持つ特徴</span>
+            </h3>
+            <p id="result-desc" class="text-xs text-garden-dark/90 leading-loose font-serif bg-white/60 p-3 rounded-xl border border-garden-beige/50"></p>
+          </div>
+
+          <div class="space-y-1.5">
+            <h3 class="font-serif font-bold text-garden-tea flex items-center gap-1">
+              <span>🍂</span> <span>つまずきやすいポイント</span>
+            </h3>
+            <p id="result-pain" class="text-xs text-garden-dark/90 leading-loose font-serif bg-white/60 p-3 rounded-xl border border-garden-beige/50"></p>
+          </div>
+
+          <div class="space-y-1.5">
+            <h3 class="font-serif font-bold text-garden-tea-light flex items-center gap-1">
+              <span>☕</span> <span>自分に戻るための問い</span>
+            </h3>
+            <p id="result-question" class="text-xs text-garden-tea font-medium italic leading-loose font-serif bg-white/60 p-3 rounded-xl border border-garden-beige/50 text-center"></p>
+          </div>
+
+          <div class="space-y-1.5">
+            <h3 class="font-serif font-bold text-garden-green flex items-center gap-1">
+              <span>✨</span> <span>今日できる小さな行動</span>
+            </h3>
+            <p id="result-action" class="text-xs text-garden-dark/90 leading-loose font-serif bg-garden-green-light/80 p-3 rounded-xl border border-garden-green/10 font-medium"></p>
+          </div>
+
+          <p class="text-[10px] text-stone-400 text-center leading-relaxed pt-2 font-serif">
+            ※この結果は自己理解を深め、心を優しく観察するためのものです。
+          </p>
+
+          <div class="space-y-2 pt-2">
+            <button onclick="copyResult()" class="w-full bg-garden-green hover:bg-garden-green/90 text-white font-medium py-3.5 px-4 rounded-xl text-xs tracking-wider transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 shadow-sm">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+              </svg>
+              <span>結果をそっとコピーする</span>
+            </button>
+            <button onclick="restartQuiz()" class="w-full bg-transparent hover:bg-garden-beige border border-garden-beige text-stone-500 py-2.5 px-4 rounded-xl text-[11px] tracking-wider transition-all duration-300 flex items-center justify-center gap-1">
+              <span>🧹</span> もう一度、庭を歩き直す
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- フッター -->
+  <footer class="text-center py-6 text-[10px] text-stone-400 border-t border-garden-beige bg-garden-white/50">
+    <p>&copy; 2026 ことばの庭. Crafted with ❤️ by Gちゃん.</p>
+  </footer>
+
+  <!-- トースト通知 -->
+  <div id="toast" class="opacity-0 pointer-events-none fixed bottom-8 left-1/2 -translate-x-1/2 bg-garden-green text-white text-xs font-medium py-3 px-6 rounded-full shadow-lg transition-all duration-300 z-50 flex items-center gap-2">
+    <span>🌿</span>
+    <span>お庭の診断結果をクリップボードに預けました</span>
+  </div>
+
+  <script>
+    const questions = [
+      {
+        text: "休日の朝、気持ちよく目が覚めました。最初にしてみたいことは？",
+        choices: [
+          { text: "窓を大きく開けて、外の空気や新しい情報を集める", type: "A" },
+          { text: "お気に入りの定番のお茶を淹れて、習慣を静かにこなす", type: "B" },
+          { text: "いま自分の心が何を求めているか、日記や感覚に聴いてみる", type: "C" },
+          { text: "何か新しいアイデアや、今日やりたいワクワクすることに手を付ける", type: "D" }
+        ]
+      },
+      {
+        text: "友人から「最近、調子はどう？」と連絡が来ました。どう返すことが多い？",
+        choices: [
+          { text: "最近面白かった本や、仕入れた世の中の話題を軽快にシェアする", type: "A" },
+          { text: "いつもと変わらない日常の報告を、丁寧かつ無難に返す", type: "B" },
+          { text: "相手の体調や心の状態を優しく気遣う言葉を多く添える", type: "C" },
+          { text: "今自分が熱中しているプロジェクトや夢を熱く語る", type: "D" }
+        ]
+      },
+      {
+        text: "少し苦手な作業をしなければなりません。どんなアプローチをとる？",
+        choices: [
+          { text: "ネットやSNSで、もっと効率よくサクッと終わる方法を探す", type: "A" },
+          { text: "あらかじめ手順を細かくリスト化し、淡々と順番に進める", type: "B" },
+          { text: "その時の気分の乗り具合を大切にし、心地よい音楽などで環境を整える", type: "C" },
+          { text: "一気に集中して、ゲーム感覚で短時間で終わらせる突破口を探す", type: "D" }
+        ]
+      },
+      {
+        text: "本屋さんに行きました。無意識に引き寄せられるコーナーは？",
+        choices: [
+          { text: "最新のトレンド、エッセイ、または雑学やニュース雑誌", type: "A" },
+          { text: "実用書、家事や片付け、歴史、または手帳術などの確実な本", type: "B" },
+          { text: "心理学、詩集、美しい写真集、またはスピリチュアル・内省の本", type: "C" },
+          { text: "自己啓発、起業、ファンタジー小説、または新しい挑戦の刺激になる本", type: "D" }
+        ]
+      },
+      {
+        text: "誰かの発言にモヤッとしたとき、あなたの心の中はどうなる？",
+        choices: [
+          { text: "「なぜあの人はあんな思考になるんだろう？」と客観的に分析し始める", type: "A" },
+          { text: "波風を立てないように、自分のいつもの役割を全うしてやり過ごす", type: "B" },
+          { text: "胸の奥がキュッとなり、その感情の余韻をしばらくじっと味わってしまう", type: "C" },
+          { text: "「私はこう思う！」と反論したくなるか、別の熱いエネルギーに切り替える", type: "D" }
+        ]
+      },
+      {
+        text: "あなたが「贅沢だな」と感じる時間はどんな時間？",
+        choices: [
+          { text: "束縛されず、自由に色々な場所や情報を行き来している時間", type: "A" },
+          { text: "整理整頓された静かな部屋で、いつものお気に入りに囲まれている時間", type: "B" },
+          { text: "誰とも比べず、ただ自分の深い内面や自然の美しさに浸っている時間", type: "C" },
+          { text: "自分が主役になって、何かに向かって夢中で形を作っている時間", type: "D" }
+        ]
+      },
+      {
+        text: "人からどんな風に褒められると、一番奥深くが満たされる？",
+        choices: [
+          { text: "「視点やセンスが軽やかで、お話していると頭がスッキリする！」", type: "A" },
+          { text: "「いつも丁寧で安定していて、あなたがいると本当に安心できる」", type: "B" },
+          { text: "「あなたの紡ぐ言葉や共感には、人を優しく癒やす力があるね」", type: "C" },
+          { text: "「行動力とエネルギーがすごい！あなたといると勇気が湧いてくる」", type: "D" }
+        ]
+      },
+      {
+        text: "買い物をするときのあなたの決断パターンは？",
+        choices: [
+          { text: "口コミや機能性をサクッと比較検討して、スマートに選ぶ", type: "A" },
+          { text: "長く使える定番品や、予算のルールに収まる確実なものを選ぶ", type: "B" },
+          { text: "理屈ではなく、持ったときの「ときめき」や「心地よさ」の直感で選ぶ", type: "C" },
+          { text: "一目惚れした瞬間、情熱のままにすぐ購入を決める", type: "D" }
+        ]
+      },
+      {
+        text: "他人の悩みを相談されたとき、ついしてしまう対応は？",
+        choices: [
+          { text: "「こういう捉え方もあるよ」と、別の視点やアドバイスを軽快に出す", type: "A" },
+          { text: "じっくり現実的な解決策を一緒に考え、まずは落ち着くよう促す", type: "B" },
+          { text: "相手の痛みにシンクロするように、ただただ優しく寄り添って話を聴く", type: "C" },
+          { text: "「大丈夫、あなたならできるよ！」とポジティブに背中をドスンと押す", type: "D" }
+        ]
+      },
+      {
+        text: "何か新しいことを始めるとき、あなたを動かす一番の原動力は？",
+        choices: [
+          { text: "「面白そう！好奇心が刺激される！」という知的ワクワク感", type: "A" },
+          { text: "「今の生活や基盤を、もっと良くして安定させるため」という安心感", type: "B" },
+          { text: "「自分の内なる想いを表現したい、誰かの心と繋がりたい」という共感性", type: "C" },
+          { text: "「挑戦したい！自分の可能性をどこまで広げられるか試したい」という情熱", type: "D" }
+        ]
+      }
+    ];
+
+    const typeResults = {
+      A: {
+        name: "軽やかにそよぐ「風の葉」タイプ",
+        desc: "好奇心旺盛で情報感度が高く、物事を客観的・スマートに捉えるのが得意な性質です。フットワークが軽く、新しい視点やアイデアを周囲に運ぶメッセンジャーのような魅力を持っています。",
+        pain: "色々なことに思考が飛びやすく、頭の中が情報オーバーヒートを起こして、器用貧乏や「結局何がしたかったんだっけ？」という空回り感を抱きがちです。過度なテンションでの情報過多に疲れてしまうことも。",
+        question: "「いま、頭の中の荷物を半分降ろして、空っぽの空を見上げるとしたら何を想う？」",
+        action: "スマホの通知を1時間だけ完全にオフにして、ただ温かいハーブティーを無心で飲む。"
+      },
+      B: {
+        name: "大地をいつくしむ「土の根」タイプ",
+        desc: "丁寧で安定感があり、日々の習慣や現実的な基盤をこつこつと大切に守れる素晴らしい性質です。周囲に「変わらない安心感」を提供し、約束やルールを重んじる信頼の紡ぎ手です。",
+        pain: "変化や未知のことに慎重になりすぎたり、家族や周囲の環境に無意識に「同調・遠慮」して自分の本音を後回しにしやすいです。ルールに縛られて息苦しくなることも。",
+        question: "「誰への遠慮も責任も一切なかったとしたら、私はここからどこへ一歩進みたい？」",
+        action: "いつもと違う道を通ってみるか、いつものルーティンをあえて1つサボってみる。"
+      },
+      C: {
+        name: "深くしみわたる「水の滴」タイプ",
+        desc: "共感力が極めて高く、自分や他人の感情の機微を繊細にキャッチできる優しい性質です。美しいもの、目に見えない想いを言語化したり、傷ついた心にそっと寄り添う癒やしの力を持っています。",
+        pain: "他人のネガティブな感情や悩みを自分のことのように吸い込んでしまい、毎晩ヘトヘトになりがちです。「ありきたりな表現をしたくない」と悩み、言葉を内側に抱え込みすぎることも。",
+        question: "「私は私のままで、もうすでに満ちている。いま、自分の境界線を優しく引いてあげるなら？」",
+        action: "お気に入りのノートを開き、誰にも見せない前提で、今の感情をただそのまま書き殴って吐き出す。"
+      },
+      D: {
+        name: "未来を照らす「火の灯」タイプ",
+        desc: "情熱的で直感力にあふれ、自分のビジョンや「これをやりたい！」という衝動に従って突き進める開拓者的な性質です。周囲の停滞した空気を打破し、新しい勇気を与える力を持っています。",
+        pain: "一気に燃え上がる反面、結果がすぐに出ないと焦ったり、エネルギーが切れたときに急激に無気力になったりします。また、周囲のゆっくりしたペースにイライラしてしまうことも。",
+        question: "「早く結果を出そうと焦らなくていい。この炎を、一生消えない穏やかな暖炉にするには？」",
+        action: "お気に入りのキャンドルに火を灯すか、5分間だけ目を閉じてゆっくり深呼吸をする。"
+      }
+    };
+
+    let currentQuestionIndex = 0;
+    let scores = { A: 0, B: 0, C: 0, D: 0 };
+    let finalSelectedType = "";
+
+    function initQuiz() {
+      currentQuestionIndex = 0;
+      scores = { A: 0, B: 0, C: 0, D: 0 };
+      document.getElementById('quiz-container').classList.remove('hidden');
+      document.getElementById('result-container').classList.add('hidden');
+      document.getElementById('intro-card').classList.remove('hidden');
+      showQuestion();
+    }
+
+    function showQuestion() {
+      const q = questions[currentQuestionIndex];
+      const progressPercent = ((currentQuestionIndex + 1) / questions.length) * 100;
+      document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+      document.getElementById('question-number').textContent = `第 ${currentQuestionIndex + 1} 問 / 全 ${questions.length} 問`;
+      document.getElementById('question-text').textContent = q.text;
+      
+      const choicesGroup = document.getElementById('choices-group');
+      choicesGroup.innerHTML = '';
+      
+      q.choices.forEach(choice => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = "choice-card w-full text-left bg-white border border-garden-beige rounded-xl p-4 text-xs sm:text-sm leading-relaxed font-serif text-garden-dark hover:bg-garden-green-light/40 transition-all duration-200 active:scale-[0.99] shadow-sm block";
+        btn.textContent = choice.text;
+        
+        btn.onclick = () => {
+          btn.classList.add('choice-active');
+          setTimeout(() => {
+            selectAnswer(choice.type);
+          }, 250);
+        };
+        choicesGroup.appendChild(btn);
+      });
+    }
+
+    function selectAnswer(type) {
+      scores[type]++;
+      currentQuestionIndex++;
+      if (currentQuestionIndex < questions.length) {
+        showQuestion();
+      } else {
+        showResult();
+      }
+    }
+
+    function showResult() {
+      document.getElementById('quiz-container').classList.add('hidden');
+      document.getElementById('intro-card').classList.add('hidden');
+      
+      let maxType = 'A';
+      let maxScore = scores.A;
+      for (const t in scores) {
+        if (scores[t] > maxScore) {
+          maxScore = scores[t];
+          maxType = t;
+        }
+      }
+      
+      finalSelectedType = maxType;
+      const result = typeResults[maxType];
+      
+      // 画像のマッピング設定（imagesフォルダー内）
+      const imageMap = {
+        A: 'images/wind.png',
+        B: 'images/earth.png',
+        C: 'images/water.png',
+        D: 'images/fire.png'
+      };
+
+      // キャラクター画像要素をアップデート
+      const imgElement = document.getElementById('result-type-image');
+      imgElement.src = imageMap[maxType];
+      imgElement.alt = result.name;
+
+      document.getElementById('result-type-name').textContent = result.name;
+      document.getElementById('result-desc').textContent = result.desc;
+      document.getElementById('result-pain').textContent = result.pain;
+      document.getElementById('result-question').textContent = result.question;
+      document.getElementById('result-action').textContent = result.action;
+      
+      const resultContainer = document.getElementById('result-container');
+      resultContainer.classList.remove('hidden');
+      
+      setTimeout(() => {
+        resultContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+
+    function copyResult() {
+      const result = typeResults[finalSelectedType];
+      if (!result) return;
+      
+      const text = `【ことばの庭 — 性質タイプ診断 結果】
+あなたの心の性質：${result.name}
+
+◆ 特徴
+${result.desc}
+
+◆ つまづきやすいポイント
+${result.pain}
+
+◆ 自分に戻るための問い
+${result.question}
+
+◆ 今日できる小さな行動
+${result.action}
+
+※この診断は医療・心理診断ではなく、自己理解のための観察ツールです。
+#ことばの庭性質診断`;
+
+      const tempTextArea = document.createElement('textarea');
+      tempTextArea.value = text;
+      tempTextArea.style.position = 'fixed';
+      tempTextArea.style.top = '0';
+      tempTextArea.style.left = '0';
+      tempTextArea.style.opacity = '0';
+      document.body.appendChild(tempTextArea);
+      
+      tempTextArea.focus();
+      tempTextArea.select();
+
+      try {
+        if (document.execCommand('copy')) {
+          showToast();
+        }
+      } catch (err) {
+        console.error('コピーに失敗しました', err);
+      }
+
+      document.body.removeChild(tempTextArea);
+    }
+
+    function showToast() {
+      const toast = document.getElementById('toast');
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      toast.classList.add('opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0', 'pointer-events-none');
+      }, 2500);
+    }
+
+    function restartQuiz() {
+      initQuiz();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // サービスワーカーの登録
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => {
+            console.log('ことばの庭 サービスワーカー登録に成功したわよ✨:', reg.scope);
+          })
+          .catch(err => {
+            console.log('サービスワーカー登録でちょっとつまずいちゃったかも💦:', err);
+          });
+      });
+    }
+
+    window.onload = function() {
+      initQuiz();
+    };
+  </script>
+</body>
+</html>
