@@ -1,13 +1,13 @@
-const CACHE_NAME = 'kotoba-garden-v2'; // 画像追加に伴いキャッシュバージョンを更新したわよ✨
+const CACHE_NAME = 'kotoba-garden-v5-refresh'; // v2から一気に最新へ！
 const ASSETS_TO_CACHE = [
   './',
   'index.html',
   'manifest.json',
   'icon.svg',
-  'images/wind.png',
-  'images/earth.png',
-  'images/water.png',
-  'images/fire.png'
+  'wind.png',
+  'earth.png',
+  'water.png',
+  'fire.png'
 ];
 
 // インストール時にキャッシュをそっと敷き詰めるの
@@ -29,7 +29,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            console.log('古いお庭の落ち葉をお掃除するわね🧹:', cache);
+            console.log('古いお庭の落ち葉（v2の記憶）をお掃除するわね🧹:', cache);
             return caches.delete(cache);
           }
         })
